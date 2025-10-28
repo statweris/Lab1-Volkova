@@ -3,127 +3,138 @@ using System.Collections.Generic;
 
 namespace VolkovaFactoryPrototype
 {
-    internal class ProgramVolkova
+    public abstract class FigureVolkova : ICloneable
     {
-        public abstract class ShapeVolkova : ICloneable
+        public abstract string NameFigure { get; }
+        public abstract int CellsCount { get; }
+
+        public string Name { get; set; }
+
+        public string FigureType
         {
-            public abstract string Name { get; }
-            public abstract int Cells { get; }
-            public abstract object Clone();
+            get { return CellsCount > 4 ? "Супер-фигура" : "Обычная фигура"; }
         }
 
-        public class LineShapeVolkova : ShapeVolkova
-        {
-            public override string Name => "Линия";
-            public override int Cells => 4;
+        public abstract object Clone();
 
-            public override object Clone()
-            {
-                return new LineShapeVolkova();
-            }
+        public void PrintPropertiesVolkova()
+        {
+            Console.WriteLine($"{Name} ({NameFigure} (Число клеток: {CellsCount}) - {FigureType}");
         }
+    }
 
-        public class SquareShapeVolkova : ShapeVolkova
+    // Конкретные фигуры
+    public class LineVolkova : FigureVolkova
+    {
+        public override int CellsCount => 4;
+        public override string NameFigure => "Линия";
+
+        public override object Clone()
         {
-            public override string Name => "Квадрат";
-            public override int Cells => 4;
-
-            public override object Clone()
-            {
-                return new SquareShapeVolkova();
-            }
+            return new LineVolkova() { Name = this.Name };
         }
+    }
 
-        public class TShapeVolkova : ShapeVolkova
+    public class SquareVolkova : FigureVolkova
+    {
+        public override int CellsCount => 4;
+        public override string NameFigure => "Квадрат";
+
+        public override object Clone()
         {
-            public override string Name => "Т-фигура";
-            public override int Cells => 4;
-
-            public override object Clone()
-            {
-                return new TShapeVolkova();
-            }
+            return new SquareVolkova() { Name = this.Name };
         }
+    }
 
-        public class CrossShapeVolkova : ShapeVolkova
+    // Супер-фигуры
+    public class CrossVolkova : FigureVolkova
+    {
+        public override int CellsCount => 5;
+        public override string NameFigure => "Крест";
+
+        public override object Clone()
         {
-            public override string Name => "Крест";
-            public override int Cells => 5;
-
-            public override object Clone()
-            {
-                return new CrossShapeVolkova();
-            }
+            return new CrossVolkova() { Name = this.Name };
         }
+    }
 
-        public class ShapeFactoryVolkova
+    public class SuperLineVolkova : FigureVolkova
+    {
+        public override int CellsCount => 6;
+        public override string NameFigure => "Супер-линия";
+
+        public override object Clone()
         {
-            private readonly List<ShapeVolkova> _prototypesVolkova;
-            private readonly Random _randomVolkova;
+            return new SuperLineVolkova() { Name = this.Name };
+        }
+    }
 
-            public ShapeFactoryVolkova()
+    public class FigureFactoryVolkova
+    {
+        private readonly List<FigureVolkova> _prototypesVolkova;
+        private readonly Random _rndVolkova;
+
+        public FigureFactoryVolkova()
+        {
+            _rndVolkova = new Random();
+            _prototypesVolkova = new List<FigureVolkova>
             {
-                _randomVolkova = new Random();
-                _prototypesVolkova = new List<ShapeVolkova>
-            {
-                new LineShapeVolkova(),
-                new SquareShapeVolkova(),
-                new TShapeVolkova(),
-                new CrossShapeVolkova()
+                new LineVolkova() { Name = "Линия" },
+                new SquareVolkova() { Name = "Квадрат" },
+                new CrossVolkova() { Name = "Крест" },
+                new SuperLineVolkova() { Name = "Супер-линия" }
             };
-            }
+        }
 
-            public ShapeVolkova CreateRandomShapeVolkova()
-            {
-                int index = _randomVolkova.Next(_prototypesVolkova.Count);
-                return (ShapeVolkova)_prototypesVolkova[index].Clone();
-            }
+        public FigureVolkova GenerateRandomFigureVolkova()
+        {
+            int index = _rndVolkova.Next(_prototypesVolkova.Count);
+            return (FigureVolkova)_prototypesVolkova[index].Clone();
+        }
 
-            public ShapeVolkova CreateSpecificShapeVolkova(string shapeType)
+        public FigureVolkova CreateFigureByNameVolkova(string name)
+        {
+            foreach (var prototype in _prototypesVolkova)
             {
-                switch (shapeType.ToLower())
+                if (prototype.NameFigure.Contains(name))
                 {
-                    case "линия":
-                        return new LineShapeVolkova();
-                    case "квадрат":
-                        return new SquareShapeVolkova();
-                    case "т":
-                        return new TShapeVolkova();
-                    case "крест":
-                        return new CrossShapeVolkova();
-                    default:
-                        return new LineShapeVolkova();
+                    return (FigureVolkova)prototype.Clone();
                 }
             }
+            return null;
         }
+    }
 
-
+    internal class ProgramVolkova
+    {
         static void Main(string[] args)
         {
-            Console.WriteLine("Фигуры\n");
+            Console.WriteLine("=== Генератор фигур ===\n");
 
-            ShapeFactoryVolkova factoryVolkova = new ShapeFactoryVolkova();
+            FigureFactoryVolkova factory = new FigureFactoryVolkova();
 
-            // Создание случайных фигур
-            Console.WriteLine("Случайные фигуры:");
+            // Генерация случайных фигур
             for (int i = 0; i < 3; i++)
             {
-                ShapeVolkova shape = factoryVolkova.CreateRandomShapeVolkova();
-                ShapeVolkova clonedShape = (ShapeVolkova)shape.Clone();
+                FigureVolkova figure = factory.GenerateRandomFigureVolkova();
+                FigureVolkova clonedFigure = (FigureVolkova)figure.Clone();
 
-                Console.WriteLine($"Оригинал: {shape.Name} (клеток: {shape.Cells})");
-                Console.WriteLine($"Клон: {clonedShape.Name} (клеток: {clonedShape.Cells})");
-                Console.WriteLine("---");
+                Console.WriteLine($"Набор фигур #{i + 1}:");
+                Console.WriteLine("Оригинал фигуры:");
+                figure.PrintPropertiesVolkova();
+
+                Console.WriteLine("Копия фигуры:");
+                clonedFigure.PrintPropertiesVolkova();
+
+                Console.WriteLine(new string('=', 40));
             }
 
-            // Создание специфических фигур
-            Console.WriteLine("\nСпецифические фигуры:");
-            string[] specificShapes = { "квадрат", "крест" };
-
-            foreach (string shapeType in specificShapes)
+            // Демонстрация создания конкретной фигуры
+            Console.WriteLine("\n=== Создание конкретных фигур ===");
+            FigureVolkova specificFigure = factory.CreateFigureByNameVolkova("Квадрат");
+            if (specificFigure != null)
             {
-                ShapeVolkova specificShape = factoryVolkova.CreateSpecificShapeVolkova(shapeType);
-                Console.WriteLine($"Создана: {specificShape.Name}");
+                specificFigure.PrintPropertiesVolkova();
             }
         }
     }
